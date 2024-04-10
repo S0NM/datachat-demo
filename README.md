@@ -1,2 +1,2 @@
 # datachat-demo
-Ứng dụng chatgpt trong data app
+Đây là ứng dụng demo cho việc sử dụng chatgpt trong phân tích dữ liệu
