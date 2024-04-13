@@ -1,0 +1,12 @@
+@startuml
+entity Transaction {
+  + trans_code : string
+  + user_id : string
+  + trans_amount : int
+  + trans_time : string
+  + trans_date : string
+  + trans_status : string
+  + trans_type : string
+}
+
+@enduml
