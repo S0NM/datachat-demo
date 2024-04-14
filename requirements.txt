@@ -1,7 +1,6 @@
 altair==5.3.0
 annotated-types==0.6.0
 anyio==4.3.0
-anytree==2.12.1
 astor==0.8.1
 attrs==23.2.0
 blinker==1.7.0
@@ -13,21 +12,20 @@ contourpy==1.2.1
 cycler==0.12.1
 distro==1.9.0
 duckdb==0.10.1
-exceptiongroup==1.2.0
 Faker==19.13.0
 fonttools==4.51.0
 gitdb==4.0.11
 GitPython==3.1.43
 google-auth==2.29.0
 google-auth-oauthlib==1.2.0
-gspread==6.0.0
+greenlet==3.0.3
+gspread==6.1.0
 h11==0.14.0
 httpcore==1.0.5
 httplib2==0.22.0
 httpx==0.27.0
 idna==3.6
 Jinja2==3.1.3
-johnnydep==1.20.4
 jsonschema==4.21.1
 jsonschema-specifications==2023.12.1
 kiwisolver==1.4.5
@@ -37,8 +35,7 @@ matplotlib==3.8.4
 mdurl==0.1.2
 numpy==1.26.4
 oauthlib==3.2.2
-openai==1.17.1
-oyaml==1.0
+openai==1.17.0
 packaging==24.0
 pandas==1.5.3
 pandasai==2.0.32
@@ -71,8 +68,6 @@ SQLAlchemy==2.0.29
 streamlit==1.33.0
 streamlit-option-menu==0.3.12
 StrEnum==0.4.15
-structlog==24.1.0
-tabulate==0.9.0
 tenacity==8.2.3
 toml==0.10.2
 toolz==0.12.1
@@ -82,4 +77,3 @@ typing_extensions==4.11.0
 tzdata==2024.1
 urllib3==2.2.1
 vega-datasets==0.9.0
-wimpy==0.6

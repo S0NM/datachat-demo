@@ -1,8 +1,7 @@
 import gspread
 from pandasai.llm import OpenAI
 import os
-from pandasai import SmartDataframe
-from pandasai.connectors import PandasConnector
+from pandasai import SmartDatalake
 import pandas as pd
 import streamlit as st
 from pandasai.helpers.openai_info import get_openai_callback
@@ -10,12 +9,16 @@ import matplotlib
 from pandasai.responses.response_parser import ResponseParser
 from openai import OpenAI as OpenAI2
 import plantuml
+import re
+import streamlit.components.v1 as components
 
 # Set backend before import pyplot (Do not show a new windows after plotting)
 matplotlib.use("Agg", force=True)
+env_openai_key = "OPENAI_API_KEY"
 
 # === INIT CONFIGURATION =====
-os.environ["OPENAI_API_KEY"] = st.secrets['OPENAI_API_KEY']
+if env_openai_key not in  os.environ:
+    os.environ["OPENAI_API_KEY"] = st.secrets['OPENAI_API_KEY']
 llm = OpenAI()
 client = OpenAI2()
 GS_ACCOUNT_PATH = 'google_sheet_account.json'
@@ -58,7 +61,7 @@ class MyStResponseParser(ResponseParser):
         # print(f"Response Parser: Other Format: {result}")
 
         #Save into session state
-        st.session_state.messages.append({'role': "assistant", "type": result['type'], "content": result['value']})
+        append_messages(role="assistant",content=result['value'], type=result['type'])        
         if result['type'] == "dataframe":
             # Fix: loi bi trung lap cot "count"
             df = result['value']
@@ -89,7 +92,29 @@ def load_df_from_googleshset(url):
     df = df.iloc[1:]  # Loại bỏ hàng header khỏi dữ liệu
     return df
 
-def create_texts(df):    
+# Load data in Google Sheet into DataFrame
+
+
+#Load multiple sheets into a list of dataframe
+def load_datalake_from_googleshset(url):
+    # Save into a Google Sheet
+    gs_account = gspread.service_account(filename=GS_ACCOUNT_PATH)
+    gs_sheet = gs_account.open_by_url(url)
+
+    # A list of dataframe
+    dataframes = []
+    for sheet in gs_sheet.worksheets():
+        data = sheet.get_all_values()
+        # Convert into DataFrame
+        df = pd.DataFrame(data)
+        df.columns = df.iloc[0]  # Đặt hàng đầu tiên làm header
+        df = df.iloc[1:]  # Loại bỏ hàng header khỏi dữ liệu
+        dataframes.append(df)
+
+    return dataframes
+
+
+def create_texts(df):
     column_names = ', '.join(df.columns)
     column_name_texts = f"Data Frame has column names: \n {column_names}"
     print(column_name_texts)
@@ -105,7 +130,7 @@ def create_texts(df):
 
 # Cai dat: pip install plantuml
 def create_plantuml_image(uml_code, filename):
-    print(f'UML_CODE: {uml_code}')
+    print(f'create_plantuml_image:UML_CODE: {uml_code}')
     puml = plantuml.PlantUML(url='http://www.plantuml.com/plantuml/img/')
 
     # Tạo file ảnh từ mã UMLç
@@ -118,6 +143,26 @@ def create_plantuml_image(uml_code, filename):
         print(f"Ảnh đã được tạo thành công và lưu tại {filename}.png")
     else:
         print("Không thể tạo ảnh.")
+
+
+def append_messages(role="user", content=any, type="string"):
+    st.session_state['messages'].append(
+        {"role": role, "content": content, "type": type})
+
+def get_all_messages():
+    return st.session_state['messages']
+
+def render_messages(messages):
+    for message in messages:
+        with st.chat_message(message['role']):
+            if message['type'] == "dataframe":
+                st.dataframe(message['content'])
+            elif message['type'] == 'plot':
+                st.image(message["content"])
+            elif message['type'] == 'image':
+                st.image(message["content"])
+            else:
+                st.write(message["content"])
 
 # === MAIN PAGE =====
 def main_sidebar():
@@ -134,9 +179,9 @@ def main_sidebar():
             if st.button("Load Data"):
                 reset_state_after_loading_data()                
                 try: 
-                    df = load_df_from_googleshset(url)                
+                    dataframes = load_datalake_from_googleshset(url)                
                     st.session_state['data_loaded'] = True
-                    st.session_state['df'] = df                    
+                    st.session_state['df'] = dataframes
                     st.info("**👌 Load Successful! Ready to chat**")
                 except Exception as e:
                     st.session_state['data_loaded'] = False
@@ -145,6 +190,7 @@ def main_sidebar():
         else:
             st.session_state['data_loaded'] = False
             st.warning("👆 Please input URL ")
+
 
 
 def main_page():
@@ -169,56 +215,67 @@ def main_page():
         """,
         unsafe_allow_html=True
     )
-    df = st.session_state['df']    
+    dataframes = st.session_state['df']
     is_first_loading = st.session_state['is_first_loading']
-    
+
     # Show first message (after loading data successfully)
-    if st.session_state['data_loaded']:            
-        if (len(df)> 0) & (not is_first_loading):
-            with st.chat_message("assistant"):                
-                # Create UML          
-                if not st.session_state['has_erd']:
-                    st.write(
-                        f"I've got your DATA! The number of Record is: **{len(df)}** records")
-                    st.write("The relationship between your data tables is shown in the figure below: ")
-                    prompt = f"Create a ER Diagram by using plantuml code and my description. Don't need to embed sample data in the code. {create_texts(df)}.Answer code only without any explaination"
-                    completion = client.chat.completions.create(
-                        model="gpt-3.5-turbo", messages=[{"role": "user", "content": prompt}])
+    if st.session_state['data_loaded']:
+        if (len(dataframes) > 0) & (not is_first_loading):
+            # with st.chat_message("assistant"):
+                # Create UML
+            if not st.session_state['has_erd']:
+                content1 = f'''**Skill 1** : UNDERSTANDING data and UNRAVELING the mysteries of table relationships!
+                        \n Total number of sheet(s): **{len(dataframes)}**'''
+                content2 = '''**Skill 2**: DRAWING the relationship amongs sheets (UML format)...'''
+                append_messages(role='assistant',content=content1, type="string")
+                append_messages(role='assistant',content=content2, type="string")
+                
+                prompt = f'''Create a ER Diagram by using plantuml code and my description. Don't need to embed sample data in the code. {[create_texts(df) for df in dataframes]}.Answer code only without any explaination'''
+                
+                completion = client.chat.completions.create(
+                    model="gpt-3.5-turbo", messages=[{"role": "user", "content": prompt}])
+                try:
                     my_content = completion.choices[0].message.content
-                    create_plantuml_image(my_content, 'plantuml_img')
-                    st.image('plantuml_img.png')
-                    st.session_state['has_erd'] = True
-    
+                    pattern = re.compile(r"@startuml.*?@enduml", re.DOTALL)
+                    matches = pattern.findall(my_content)
+                    if len(matches) >0:
+                        create_plantuml_image(matches[0], 'plantuml_img')
+                        append_messages(role="assistant",
+                                        content='plantuml_img.png', type="image")
+                        st.session_state['has_erd'] = True
+                except Exception as e:
+                    st.write(f"**😢 Ops! Error!** Exception Tracing:{e}")
+                # with st.chat_message("assistant"):
+                #     st.code('Tổng số tiền giao dịch trong tháng là bao nhiêu')
+                #     st.code('Ai là người có số giao dịch nhiều nhất')
+                #     st.code('Vẽ biểu đồ pie chart so sánh số lượng giao dịch của từng người dùng')
+
     # Show history messages based on message type
-    messages = st.session_state['messages']    
-    for index,message in enumerate(messages):        
-        with st.chat_message(message['role']):
-            if message['type'] == "dataframe":
-                st.dataframe(message['content'])
-            elif message['type'] == 'plot':
-                st.image(message["content"])
-            else:
-                # print(f'call me {index} and message: {message}')
-                st.write(message["content"])
-    
+    messages = get_all_messages()
+    render_messages(messages=messages)
+
     # Get input from user. Sampe: "How many transaction users of company ANNAM"
     prompt = st.chat_input(" 🗣️ Chat with Data",)
     if prompt is not None:
-        if df is not None:
+        if dataframes is not None:
             # Show message
             with st.chat_message('user'):
                 st.write(prompt)
-            st.session_state.messages.append({"role": "user", "content": prompt,"type": "string"})
-            with st.chat_message("assistant"):                                                  
-                agent = SmartDataframe(df,
-                                    config={
-                                        "llm": llm,
-                                        "conversational": False,
-                                        "response_parser": MyStResponseParser
-                                    })                 
-                agent.chat(prompt)                                          
+            append_messages(role="user",content=prompt,type="string")
+            with st.chat_message("assistant"):
+                agent = SmartDatalake(dataframes,
+                                       config={
+                                           "llm": llm,
+                                           "conversational": False,
+                                           "response_parser": MyStResponseParser
+                                       })
+                agent.chat(prompt)
+
+    # Create some suggestion button
+   
 
 if __name__ == "__main__":    
     main_sidebar()
     if st.session_state['data_loaded']:
         main_page()
+
