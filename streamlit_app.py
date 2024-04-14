@@ -1,4 +1,5 @@
 import gspread
+from google.oauth2.service_account import Credentials
 from pandasai.llm import OpenAI
 import os
 from pandasai import SmartDatalake
@@ -10,18 +11,24 @@ from pandasai.responses.response_parser import ResponseParser
 from openai import OpenAI as OpenAI2
 import plantuml
 import re
-import streamlit.components.v1 as components
+import json
 
 # Set backend before import pyplot (Do not show a new windows after plotting)
 matplotlib.use("Agg", force=True)
 env_openai_key = "OPENAI_API_KEY"
+env_google_key = "GS_ACCOUNT_JSON"
 
 # === INIT CONFIGURATION =====
 if env_openai_key not in  os.environ:
     os.environ["OPENAI_API_KEY"] = st.secrets['OPENAI_API_KEY']
 llm = OpenAI()
 client = OpenAI2()
+if env_google_key not in os.environ:
+    GS_ACCOUNT_JSON = st.secrets[env_google_key]
+else:
+    GS_ACCOUNT_JSON = os.environ[env_google_key]
 GS_ACCOUNT_PATH = 'google_sheet_account.json'
+GG_SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 GS_URL = 'https://docs.google.com/spreadsheets/d/11AqzXaJbt5yHgoP0x4lt1M-sTDlvYee9C1syTASHyhM/edit?usp=sharing'
 
 # Set Page config
@@ -75,30 +82,16 @@ class MyStResponseParser(ResponseParser):
             st.write(result['value'])
         return
 
-# Load data in Google Sheet into DataFrame
-def load_df_from_googleshset(url):
-    # Save into a Google Sheet
-    gs_account = gspread.service_account(filename=GS_ACCOUNT_PATH)
-    gs_sheet = gs_account.open_by_url(url)
-
-    # Get the first sheet
-    # in case you want to select sheeet by name: workbook.worksheet('Sheet1')
-    first_sheet = gs_sheet.get_worksheet(0)
-    data = first_sheet.get_all_values()
-
-    # Convert into DataFrame
-    df = pd.DataFrame(data)
-    df.columns = df.iloc[0]  # Đặt hàng đầu tiên làm header
-    df = df.iloc[1:]  # Loại bỏ hàng header khỏi dữ liệu
-    return df
-
-# Load data in Google Sheet into DataFrame
-
-
 #Load multiple sheets into a list of dataframe
 def load_datalake_from_googleshset(url):
     # Save into a Google Sheet
-    gs_account = gspread.service_account(filename=GS_ACCOUNT_PATH)
+    if os.path.exists('google_sheet_account.json'):
+        print("Load GG Credential from files")
+        gs_account = gspread.service_account(filename=GS_ACCOUNT_PATH)        
+    else:        
+        print("Load GG Credential from JSON")
+        creds = Credentials.from_service_account_info(json.loads(GS_ACCOUNT_JSON), scopes=GG_SCOPES)
+        gs_account = gspread.auth.authorize(creds)
     gs_sheet = gs_account.open_by_url(url)
 
     # A list of dataframe
