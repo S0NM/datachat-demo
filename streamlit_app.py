@@ -64,7 +64,6 @@ class MyStResponseParser(ResponseParser):
         super().__init__(context)
 
     def parse(self, result):
-        # Debug
         # print(f"Response Parser: Other Format: {result}")
 
         #Save into session state
