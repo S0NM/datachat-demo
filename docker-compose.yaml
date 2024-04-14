@@ -19,6 +19,8 @@ services:
     restart: always
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+    volumes:
+      - .:/app:rw
   nginx-ohara:
     image: nginx
     platform: linux/arm64
