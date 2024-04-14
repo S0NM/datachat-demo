@@ -16,8 +16,6 @@ services:
   server:
     build:
       context: .
-    ports:
-      - 3001:3001
     restart: always
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
