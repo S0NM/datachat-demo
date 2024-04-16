@@ -189,8 +189,7 @@ def show_first_messages():
            content4 = "OK! Let's your turn. Ask me anything."
            formated_answer = client.rewirte_answer(question, answer)
            st.write(f'{formated_answer} \n\n {content4}')
-           append_messages('assistant', f'{content3} \n\n {
-                           formated_answer} \n\n {content4}', "string")
+           append_messages('assistant', f'''{content3} \n\n {formated_answer} \n\n {content4}''', "string")
         st.session_state['has_erd'] = True
         yield 
         
