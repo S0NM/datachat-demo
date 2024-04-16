@@ -29,8 +29,8 @@ class OpenAIClient:
         # Tạo ảnh và lưu kết quả
         result = puml.processes_file("./cache/"+filename + ".puml")
         if result:
-            print(f"PlantUML Image created sucessfully, stored at {
-                "./cache/"+filename}.png")
+            print(
+                f'''PlantUML Image created sucessfully, stored at "./cache/" {filename}.png''')
         else:
             print("Plant UML Imange created FAILED")
 
