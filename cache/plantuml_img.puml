@@ -1,0 +1,26 @@
+@startuml
+entity User {
+  + user_id
+  ---
+  user_name
+}
+
+entity Company {
+  + user_id
+  ---
+  company_name
+}
+
+entity Transaction {
+  + trans_code
+  ---
+  user_id
+  trans_amount
+  trans_time
+  trans_date
+  trans_type
+}
+
+User -- Transaction
+Company -- User
+@enduml

@@ -1,6 +1,5 @@
 .*/
 .DS_Store
-cache/*
 exports/*
 st.write(
 google_sheet*
