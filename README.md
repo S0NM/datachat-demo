@@ -4,8 +4,8 @@
 * Data Copilot Demo: https://elinson-chatapp.streamlit.app/
 
 ## Objectives 
-Data Copilot: My goal is to create an assistant that helps me quickly resolve data-related issues. Why? There are two reasons:
-* 1) I need rapid, anytime access to 360-degree information on features, performance & effectiveness (I am the Product Manager at my company)
+Data Copilot: My goal is to create an assistant that helps me quickly access to product data. **Why?** There are two reasons:
+* 1) I need rapid, anytime **access to 360-degree information** of feature performance & operation (I am the Product Manger)
 * 2) I have worked directly with ChatGPT and encountered several limitations:
 	* ChatGPT does not allow me to handle Google Sheets directly
 	* Uploading and processing data with ChatGPT is a costly (tokens), time-consuming process, and sometimes the risk of having to share data is inevitable --> **I need a cheaper, more secure solution**
