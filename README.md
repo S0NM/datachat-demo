@@ -1,5 +1,8 @@
 # Data Copilot: Implementing my first idea
 
+## Demo
+* Data Copilot Demo: https://elinson-chatapp.streamlit.app/
+* 
 ## Objectives 
 Data Copilot: My goal is to create an assistant that helps me quickly resolve data-related issues. Why? There are two reasons:
 * 1) I need rapid, anytime access to 360-degree information on features, performance & effectiveness (I am the Product Manager at my company)
