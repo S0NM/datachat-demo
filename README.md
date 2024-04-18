@@ -18,6 +18,9 @@ During my research, I discovered PandasAI (a fantastic library, which I recommen
 * **How to use ChatGPT and PlanUML to draw ER Diagrams** (I use it to check if ChatGPT really understands the relationships between data tables, as a misunderstanding could lead to incorrect processing)
 * **How to work with Google Sheets**
 
+<img width="600" alt="image" src="https://github.com/S0NM/datachat-demo/assets/31585927/45f769b8-d64f-479c-bb6e-69c78b6d17ff">
+
+
 ## Self-Deployment Note
 You have to create two environment variables to store the OPENAI_API_KEY and the Credentials information when connecting to Google Sheets before running
 ```
@@ -27,3 +30,5 @@ export GS_ACCOUNT_JSON='{"type":"service_account","project_id":"...........,"uni
 
 ## Next
 * Update after I have more time and further develop my idea
+<img width="400" alt="image" src="https://github.com/S0NM/datachat-demo/assets/31585927/fc70141c-21e0-46fb-b114-a6e090d67f93">
+
