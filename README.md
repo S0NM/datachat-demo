@@ -1,15 +1,29 @@
 # datachat-demo
 
+## Objectives 
+Data Copilot: My goal is to create an assistant that helps me quickly resolve data-related issues. Why? There are two reasons:
+* 1) I need rapid, anytime access to 360-degree information on features, performance & effectiveness (I am the Product Manager at my company)
+* 2) I have worked directly with ChatGPT and encountered several limitations:
+	* ChatGPT does not allow me to handle Google Sheets directly
+	* Uploading and processing data with ChatGPT is a costly (tokens), time-consuming process, and sometimes the risk of having to share data is inevitable --> **I need a cheaper, more secure solution**
 
-## Bước 1: Cài đặt các gói 
+
+## What's in this project?
+During my research, I discovered PandasAI (a fantastic library, which I recommend to anyone with similar goals) and to help you quickly get started, I created a demo project on Streamlit. You can freely download and explore it.
+* **How to Combine PandasAI + ChatGPT + Streamlit**
+	* Streamlit: allows you to build chat interfaces very quickly
+	* Basic techniques with PandasAI
+		* PandasAI only sends metadata instead of the full data set -> no worries about data leak risks
+		* How to handle the response and display it on Streamlit
+* **How to use ChatGPT and PlanUML to draw ER Diagrams** (I use it to check if ChatGPT really understands the relationships between data tables, as a misunderstanding could lead to incorrect processing)
+* **How to work with Google Sheets**
+
+## Self-Deployment Note
+You have to create two environment variables to store the OPENAI_API_KEY and the Credentials information when connecting to Google Sheets before running
 ```
-#Cài đặt streamlit
-pip install streamlit
-#Cài đặt các gói
-pip install -r requirements.txt
-```
-## Bước 2: Chạy ứng dụng
-```
-streamlit run streamlit_app.py
+export OPENAI_API_KEY="sk-iOZXf..................gqObIX5cd8Z"
+export GS_ACCOUNT_JSON='{"type":"service_account","project_id":"...........,"universe_domain":"googleapis.com"}'
 ```
 
+## Next
+* Update after I have more time and further develop my idea
