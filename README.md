@@ -1,4 +1,4 @@
-# datachat-demo
+# Data Copilot: Implementing my first idea
 
 ## Objectives 
 Data Copilot: My goal is to create an assistant that helps me quickly resolve data-related issues. Why? There are two reasons:
