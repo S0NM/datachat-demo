@@ -6,6 +6,8 @@ from pandasai import SmartDatalake
 import pandas as pd
 import streamlit as st
 import matplotlib
+import seaborn as sns
+import matplotlib.pyplot as plt
 from pandasai.responses.response_parser import ResponseParser
 import json
 from PIL import Image
@@ -13,6 +15,9 @@ from utils.openai_client import OpenAIClient
 
 # Set backend before import pyplot (Do not show a new windows after plotting)
 matplotlib.use("Agg", force=True)
+#Set "seaborn" theme
+sns.set_theme(style="whitegrid", palette="pastel",
+              context="paper", font_scale=1.5)
 env_openai_key = "OPENAI_API_KEY"
 env_google_key = "GS_ACCOUNT_JSON"
 
@@ -36,19 +41,17 @@ st.set_page_config(
 )
 
 # === INIT STATE ===
-if 'data_loaded' not in st.session_state: #If data loaded
-    st.session_state['data_loaded'] = False
+if 'dataframes' not in st.session_state: #If data loaded
+    st.session_state['dataframes'] = None
 if 'is_first_loading' not in st.session_state:
     st.session_state['is_first_loading'] = True
 if "messages" not in st.session_state:
     st.session_state['messages'] = []
-if 'df' not in st.session_state:
-    st.session_state['df'] = None
 if 'has_erd'not in st.session_state:
     st.session_state['has_erd'] = False
 if 'last_prompt' in st.session_state:
     st.session_state['last_prompt'] = ""    
-df = st.session_state['df']
+
 
 def reset_state_after_loading_data():
     print('Call:reset_state_after_loading_data()')
@@ -103,26 +106,46 @@ def load_datalake_from_googleshset(url):
     return dataframes
 
 
+# === Working with Messages =====
+def show_welcome_messages():
+    dataframes = st.session_state['dataframes']
+    if not st.session_state['has_erd']:
+        content1 = f'''**Skill 1** : UNDERSTANDING data and UNRAVELING the mysteries of table relationships!
+                        \n Total number of sheet(s): **{len(dataframes)}**'''
+        content2 = '''**Skill 2**: DRAWING the relationship amongs sheets (UML format)...'''
+        append_messages('assistant', content1, "string")
+        append_messages('assistant', content2, "string")
+
+        # Create UML
+        img_path = client.create_uml_from_dataframe(dataframes=dataframes)
+        append_messages('assistant', img_path, "image")
+        st.session_state['has_erd'] = True
+    return
+
 def append_messages(role="user", content=any, type="string"):
-    st.session_state['messages'].append(
-        {"role": role, "content": content, "type": type})
+    message = {"role": role, "content": content, "type": type}
+    st.session_state['messages'].append(message)
+    show_message(message)
 
+def show_message(message):
+    with st.chat_message(message['role']):
+        if message['type'] == "dataframe":
+            st.dataframe(message['content'])
+        elif message['type'] == 'plot':
+            st.image(message["content"])
+        elif message['type'] == 'image':
+            # img = Image.open(message["content"]) #load from folder
+            st.image(message["content"])
+        elif message['type'] == 'markdown':
+            st.markdown(message["content"])
+        else:
+            st.write(message["content"])
 
-def refresh_messages():    
+def show_all_messages():    
     messages = st.session_state['messages']
     for message in messages:
-        with st.chat_message(message['role']):
-            if message['type'] == "dataframe":
-                st.dataframe(message['content'])
-            elif message['type'] == 'plot':
-                st.image(message["content"])
-            elif message['type'] == 'image':
-                # img = Image.open(message["content"]) #load from folder
-                st.image(message["content"])
-            elif message['type'] == 'markdown':
-                st.markdown(message["content"])
-            else:
-                st.write(message["content"])
+        show_message(message)
+    return len(messages)
 
 # === MAIN PAGE =====
 def main_sidebar():
@@ -140,33 +163,17 @@ def main_sidebar():
                 reset_state_after_loading_data()                
                 try: 
                     dataframes = load_datalake_from_googleshset(url)                
-                    st.session_state['data_loaded'] = True
-                    st.session_state['df'] = dataframes
+                    st.session_state['dataframes'] = dataframes                    
                     st.info("**👌 Load Successful! Ready to chat**")
                 except Exception as e:
-                    st.session_state['data_loaded'] = False
+                    st.session_state['dataframes'] = None
                     st.warning(
                         "**😢 Ops! Error! I have NO DATA** \n\n I'm waiting... 👆")
         else:
-            st.session_state['data_loaded'] = False
             st.warning("👆 Please input URL ")
 
 
-def show_first_messages():
-    dataframes = st.session_state['df']
-    if not st.session_state['has_erd']:
-        content1 = f'''**Skill 1** : UNDERSTANDING data and UNRAVELING the mysteries of table relationships!
-                        \n Total number of sheet(s): **{len(dataframes)}**'''
-        content2 = '''**Skill 2**: DRAWING the relationship amongs sheets (UML format)...'''                 
-        append_messages('assistant', content1,"string")
-        append_messages('assistant', content2, "string")     
-        
-        #Create UML
-        img_path = client.create_uml_from_dataframe(dataframes=dataframes)
-        append_messages('assistant', img_path, "image")
-        
-        st.session_state['has_erd'] = True
-    return
+
         
 
 def main_page():
@@ -191,14 +198,25 @@ def main_page():
         """,
         unsafe_allow_html=True
     )
-    dataframes = st.session_state['df']
+    dataframes = st.session_state['dataframes']
     is_first_loading = st.session_state['is_first_loading']
 
+    show_all_messages()
     # Show first message (after loading data successfully)
-    if st.session_state['data_loaded']:
-        if (len(dataframes) > 0) & (is_first_loading):
-            show_first_messages()            
+    if dataframes is not None:
+        if is_first_loading:
+            if not st.session_state['has_erd']:
+                content1 = f'''**Skill 1** : UNDERSTANDING data and UNRAVELING the mysteries of table relationships!
+                                \n Total number of sheet(s): **{len(dataframes)}**'''
+                content2 = '''**Skill 2**: DRAWING the relationship amongs sheets (UML format)...'''
+                append_messages('assistant', content1, "string")
+                append_messages('assistant', content2, "string")
+                # Create UML
+                img_path = client.create_uml_from_dataframe(dataframes=dataframes)
+                append_messages('assistant', img_path, "image")
+                st.session_state['has_erd'] = True
             st.session_state['is_first_loading'] = False    
+    
 
     # Get input from user. Sampe: "How many transaction users of company ANNAM"
     prompt = st.chat_input(" 🗣️ Chat with Data",)
@@ -206,21 +224,21 @@ def main_page():
         st.session_state['last_prompt'] = prompt
         if dataframes is not None:                        
             append_messages(role="user",content=prompt,type="string")
-            agent = SmartDatalake(dataframes,
-                                    config={
-                                        "llm": llm,
-                                        "conversational": False,
-                                        "response_parser": MyStResponseParser,
-                                    })
-            agent.chat(prompt) 
+            try:                                
+                agent = SmartDatalake(dataframes,
+                                        config={
+                                            "llm": llm,
+                                            "conversational": False,
+                                            "response_parser": MyStResponseParser,
+                                        })
+                agent.chat(prompt)                 
+            except Exception as e:
+                print(f'CallPansasException:Exception:{e}')
 
-    # Show history messages based on message type
-    refresh_messages()                                       
-   
 
 if __name__ == "__main__":    
     main_sidebar()
-    if st.session_state['data_loaded']:
+    if st.session_state['dataframes']:
         main_page()
     else:
         st.title('How Gabby Work')
