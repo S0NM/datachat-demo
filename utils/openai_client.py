@@ -41,7 +41,7 @@ class OpenAIClient:
         return completion.choices[0].message.content
 
     def rewirte_answer(self, question, answer):
-        response = self.send_chat_completion(f"{answer} is the answer of the question: {question}. You are a data analysis expert. Rewrite and present that answer in the most user-friendly, concise and markdown way. In the answer, key messages will be formated in bullet points.")
+        response = self.send_chat_completion(f"{answer} is the answer of the question: {question}. Rewrite that answer in the most user-friendly sentence. Answer in the same language with the question")
         return response
 
     #Return image path: 'cache/planuml_img.png

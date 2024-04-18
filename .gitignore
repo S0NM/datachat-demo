@@ -1,5 +1,7 @@
 .*/
+.devcontainer
 .DS_Store
+./utils/_*
 exports/*
 st.write(
 google_sheet*

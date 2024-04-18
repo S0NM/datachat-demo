@@ -7,7 +7,6 @@ import pandas as pd
 import streamlit as st
 import matplotlib
 from pandasai.responses.response_parser import ResponseParser
-import re
 import json
 from PIL import Image
 from utils.openai_client import OpenAIClient
@@ -47,6 +46,8 @@ if 'df' not in st.session_state:
     st.session_state['df'] = None
 if 'has_erd'not in st.session_state:
     st.session_state['has_erd'] = False
+if 'last_prompt' in st.session_state:
+    st.session_state['last_prompt'] = ""    
 df = st.session_state['df']
 
 def reset_state_after_loading_data():
@@ -57,27 +58,24 @@ def reset_state_after_loading_data():
 
 
 # === LOCAL FUNCTIONS =====
-# Xử lý các loại format của response trả về
 class MyStResponseParser(ResponseParser):
     def __init__(self, context) -> None:
         super().__init__(context)
 
     def parse(self, result):
-        # print(f"Response Parser: Other Format: {result}")
+        # print(f"Response Parser: Other Format: {result}")        
+        content_type = result['type']
+        content = result['value']
+        print(f"DEBUG:ResponseParser:ContentType:{content_type}, content:{content}")
 
-        #Save into session state
-        append_messages(role="assistant",content=result['value'], type=result['type'])        
-        if result['type'] == "dataframe":
-            # Fix: loi bi trung lap cot "count"
-            df = result['value']
-            duplicate_columns = df.columns[df.columns.duplicated(keep=False)]
-            if not duplicate_columns.empty:
-                df.columns = ['item'] + df.columns[1:].tolist()
-            st.dataframe(result['value'])
-        elif result['type'] == 'plot':
-            st.image(result["value"])
-        else:
-            st.write(result['value'])
+        #Rewrite the answer of pandasai before answering for user
+        if (content_type == 'plot') or (content_type == 'image'):
+            original_image = Image.open(content)
+            append_messages(role="assistant",content=original_image, type=content_type)
+            return
+        elif (content_type == 'number') or (content_type == 'str'):
+            content = client.rewirte_answer(st.session_state['last_prompt'],content)
+        append_messages(role="assistant",content=content, type=content_type)           
         return
 
 #Load multiple sheets into a list of dataframe
@@ -109,10 +107,9 @@ def append_messages(role="user", content=any, type="string"):
     st.session_state['messages'].append(
         {"role": role, "content": content, "type": type})
 
-def get_all_messages():
-    return st.session_state['messages']
 
-def render_messages(messages):
+def refresh_messages():    
+    messages = st.session_state['messages']
     for message in messages:
         with st.chat_message(message['role']):
             if message['type'] == "dataframe":
@@ -120,8 +117,8 @@ def render_messages(messages):
             elif message['type'] == 'plot':
                 st.image(message["content"])
             elif message['type'] == 'image':
-                img = Image.open(message["content"]) #load from folder
-                st.image(img)
+                # img = Image.open(message["content"]) #load from folder
+                st.image(message["content"])
             elif message['type'] == 'markdown':
                 st.markdown(message["content"])
             else:
@@ -160,38 +157,16 @@ def show_first_messages():
     if not st.session_state['has_erd']:
         content1 = f'''**Skill 1** : UNDERSTANDING data and UNRAVELING the mysteries of table relationships!
                         \n Total number of sheet(s): **{len(dataframes)}**'''
-        content2 = '''**Skill 2**: DRAWING the relationship amongs sheets (UML format)...'''
+        content2 = '''**Skill 2**: DRAWING the relationship amongs sheets (UML format)...'''                 
+        append_messages('assistant', content1,"string")
+        append_messages('assistant', content2, "string")     
         
-        with st.chat_message('assistant'):
-           st.write(content1)           
-           append_messages('assistant', content1,"string")
-        yield 
+        #Create UML
+        img_path = client.create_uml_from_dataframe(dataframes=dataframes)
+        append_messages('assistant', img_path, "image")
         
-        with st.chat_message('assistant'):
-           st.write(content2)
-           img_path = client.create_uml_from_dataframe(dataframes=dataframes)
-           st.image(img_path)
-           append_messages('assistant', content2, "string")
-           append_messages('assistant', img_path, "image")
-        yield 
-        
-        # Finding insights
-        with st.chat_message('assistant'):
-           content3 = '''**Skill 3**: I'm FINDING Insights from your data... '''
-           st.write(content3)
-           question = "Perform insights analysis based on your input data "
-           agent = SmartDatalake(dataframes,
-                              config={
-                                  "llm": llm,
-                                  "conversational": False
-                              })
-           answer = agent.chat(question)
-           content4 = "OK! Let's your turn. Ask me anything."
-           formated_answer = client.rewirte_answer(question, answer)
-           st.write(f'{formated_answer} \n\n {content4}')
-           append_messages('assistant', f'''{content3} \n\n {formated_answer} \n\n {content4}''', "string")
         st.session_state['has_erd'] = True
-        yield 
+    return
         
 
 def main_page():
@@ -222,33 +197,25 @@ def main_page():
     # Show first message (after loading data successfully)
     if st.session_state['data_loaded']:
         if (len(dataframes) > 0) & (is_first_loading):
-            for message in show_first_messages():
-                pass
-            st.session_state['is_first_loading'] = False
-    
-    # Show history messages based on message type
-    if (not is_first_loading):
-        messages = get_all_messages()
-        render_messages(messages=messages)
+            show_first_messages()            
+            st.session_state['is_first_loading'] = False    
 
     # Get input from user. Sampe: "How many transaction users of company ANNAM"
     prompt = st.chat_input(" 🗣️ Chat with Data",)
     if prompt is not None:
-        if dataframes is not None:
-            # Show message
-            with st.chat_message('user'):
-                st.write(prompt)
+        st.session_state['last_prompt'] = prompt
+        if dataframes is not None:                        
             append_messages(role="user",content=prompt,type="string")
-            with st.chat_message("assistant"):
-                agent = SmartDatalake(dataframes,
-                                       config={
-                                           "llm": llm,
-                                           "conversational": False,
-                                           "response_parser": MyStResponseParser,
-                                       })
-                agent.chat(prompt)
+            agent = SmartDatalake(dataframes,
+                                    config={
+                                        "llm": llm,
+                                        "conversational": False,
+                                        "response_parser": MyStResponseParser,
+                                    })
+            agent.chat(prompt) 
 
-    # Create some suggestion button
+    # Show history messages based on message type
+    refresh_messages()                                       
    
 
 if __name__ == "__main__":    
