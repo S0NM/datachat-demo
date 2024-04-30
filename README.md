@@ -2,7 +2,7 @@
 
 ## Demo
 * Data Copilot Demo: https://elinson-chatapp.streamlit.app/
-<img width="100" alt="image" src="mydemo.gif">
+<img width="1000" alt="image" src="mydemo.gif">
 
 ## Objectives 
 Data Copilot: My goal is to create an assistant that helps me quickly access to product data. **Why?** There are two reasons:
