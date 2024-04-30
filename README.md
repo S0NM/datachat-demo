@@ -36,3 +36,5 @@ export GS_ACCOUNT_JSON='{"type":"service_account","project_id":"...........,"uni
 * Update after I have more time and further develop my idea
 <img width="400" alt="image" src="https://github.com/S0NM/datachat-demo/assets/31585927/fc70141c-21e0-46fb-b114-a6e090d67f93">
 
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://elinson-chatapp.streamlit.app)
+
