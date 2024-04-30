@@ -2,6 +2,7 @@ from openai import OpenAI
 import os
 import plantuml
 import re
+import json
 
 class OpenAIClient:
     def __init__(self):
@@ -39,9 +40,40 @@ class OpenAIClient:
         completion = self.client.chat.completions.create(
             model="gpt-3.5-turbo", messages=[{"role": "user", "content": message}])
         return completion.choices[0].message.content
+    
+    def get_metadata_description(self,dfs):
+        dfs_description = ''
+        for df in dfs:
+            dfs_description = dfs_description + " [" + self._create_texts(df)+"]"
+        message = f'Based on my description about all dataframe: {dfs_description}. Adding description for all fields by predicting the meaning of each. If any field is datetime, please predict and add date/time format into its description. Answer in JSON format only without any explaination. Seperate each dataframe in a JSON item'
+        # print(f'DEFBUG:get_metadata_description:Message:{message}')
+        response = self.send_chat_completion(message)
+        # print(f'DEFBUG:get_metadata_description:Response:{response}')
+        response_json = json.loads(response)
+        data_items = list(response_json.items())
+        descriptions = []
+        for index in range(0,len(data_items)):
+            descriptions.append(data_items[index][1])
+        # print(f'DEFBUG:get_metadata_description:Description:{descriptions}')
+        return descriptions
+
+    def create_5_suggestive_questions(self,dfs):
+        metadata = self.get_metadata_description(dfs)
+        dfs_description = ''
+        for df in dfs:
+            dfs_description = dfs_description + " [" + self._create_texts(df) + "]"
+        prompt = (f"""My input data is described as follows:
+        ---- Metadata information ----
+        {metadata}
+        ---- Sample data ----
+        {dfs_description}
+        ----
+        Please create and return to me a list of 5 simple questions for querying data based on the example data of the described fields. As you are unaware of the exact timeframe, refrain from questions related to time data. Your answer should be formatted as JSON, each element contains only one question""")
+        response = self.send_chat_completion(prompt)
+        return response
 
     def rewirte_answer(self, question, answer):
-        response = self.send_chat_completion(f"{answer} is the answer of the question: {question}. Rewrite that answer in the most user-friendly sentence. Answer in the same language with the question")
+        response = self.send_chat_completion(f"{answer} is the answer of the question: {question}. Rewrite that answer in the most user-friendly sentence")
         return response
 
     #Return image path: 'cache/planuml_img.png
