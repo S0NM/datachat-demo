@@ -68,12 +68,13 @@ class OpenAIClient:
         ---- Sample data ----
         {dfs_description}
         ----
-        Please create and return to me a list of 5 simple questions for querying data based on the example data of the described fields. As you are unaware of the exact timeframe, refrain from questions related to time data. Your answer should be formatted as JSON, each element contains only one question""")
+        Please create and return to me a list of 5 simple questions for querying data based on the example data of the described fields. As you are unaware of the exact timeframe, refrain from questions related to time data. Your answer should be formatted as JSON like {{ Q1,Q2 }} """)
         response = self.send_chat_completion(prompt)
         return response
 
     def rewirte_answer(self, question, answer):
         response = self.send_chat_completion(f"{answer} is the answer of the question: {question}. Rewrite that answer in the most user-friendly sentence")
+        print(f"Rewritten: question:{question} | answer: {response}")
         return response
 
     #Return image path: 'cache/planuml_img.png

@@ -4,7 +4,7 @@ cache/*
 .DS_Store
 ./utils/_*
 exports/*
-st.write(
 google_sheet*
 pandasai.log    
-backup*                
+backup*
+venv/*

@@ -21,7 +21,7 @@ During my research, I discovered PandasAI (a fantastic library, which I recommen
 * **How to use ChatGPT and PlanUML to draw ER Diagrams** (I use it to check if ChatGPT really understands the relationships between data tables, as a misunderstanding could lead to incorrect processing)
 * **How to work with Google Sheets**
 
-<img width="600" alt="image" src="https://github.com/S0NM/datachat-demo/assets/31585927/45f769b8-d64f-479c-bb6e-69c78b6d17ff">
+<img width="600" alt="image" src="mydemo.gif">
 
 
 ## Self-Deployment Note
