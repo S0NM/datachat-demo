@@ -13,7 +13,7 @@ from PIL import Image
 from utils.openai_client import OpenAIClient
 
 # Set backend before import pyplot (Do not show a new windows after plotting)
-# matplotlib.use("Agg", force=True)
+# matplotlib.uses("Agg", force=True)
 # Set "seaborn" theme
 sns.set_theme(style="whitegrid", palette="pastel", context="paper", font_scale=1.5)
 env_openai_key = "OPENAI_API_KEY"
@@ -23,6 +23,7 @@ env_google_key = "GS_ACCOUNT_JSON"
 if env_openai_key not in os.environ:
     os.environ["OPENAI_API_KEY"] = st.secrets['OPENAI_API_KEY']
 pandas_client = OpenAI()
+pandas_client.model="gpt-4-turbo"
 openai_client = OpenAIClient()
 if env_google_key not in os.environ:
     GS_ACCOUNT_JSON = st.secrets[env_google_key]
@@ -45,8 +46,8 @@ if 'dataframes_description' not in st.session_state:
     st.session_state['dataframes_description'] = None
 if 'is_first_loading' not in st.session_state:
     st.session_state['is_first_loading'] = True
-if "agent" not in st.session_state:
-    st.session_state['agent'] = None
+if "last_prompt" not in st.session_state:
+    st.session_state['last_prompt'] = None
 if "messages" not in st.session_state:
     st.session_state['messages'] = []
 if "question_selected" not in st.session_state:
@@ -60,7 +61,7 @@ def reset_state_after_loading_data():
     st.session_state['messages'] = []
     st.session_state['is_first_loading'] = True
     st.session_state['has_erd'] = False
-    st.session_state['agent'] = None
+    st.session_state['last_prompt'] = None
 
 
 # === LOCAL FUNCTIONS =====
@@ -80,9 +81,9 @@ class MyStResponseParser(ResponseParser):
             append_messages(role="assistant", content=original_image, type=content_type)
             return
         elif (content_type == 'number') or (content_type == 'str'):
-            agent = st.session_state['agent']
-            print(f'DEBUG:LastPrompt:{agent.last_prompt}')
-            content = openai_client.rewirte_answer(agent.last_prompt, content)
+            last_prompt = st.session_state['last_prompt']
+            print(f'DEBUG:MyStResponseParser:{last_prompt}')
+            content = openai_client.rewirte_answer(last_prompt, content)
         append_messages(role="assistant", content=content, type=content_type)
         return
 
@@ -157,13 +158,14 @@ def show_message(message):
         "markdown": st.markdown,
         "questions": st.button
     }
+    print(f"Debug:ShowMessage:Msg_Type:{message['type']}:Msg_value:{message['content']}")
     with st.chat_message(message['role']):
         func = message_type_to_function.get(message['type'], st.write)
         if message['type'] == "questions":
             questions = message['content']
             for key, value in questions.items():
-                print(f"{key}: {value}")
                 if st.button(label=value):
+                    print(f"DEBUG:Selected Question: {value}")
                     st.session_state['question_selected'] = value
         else:
             func(message['content'])
@@ -183,8 +185,10 @@ def send_prompt(prompt):
             agent = SmartDatalake(dataframes, config={
                 "llm": pandas_client,
                 "conversational": True,
-                "response_parser": MyStResponseParser
+                "response_parser": MyStResponseParser,
+                "save_logs": True
             }, )
+            st.session_state['last_prompt'] = prompt
             agent.chat(prompt)
         except Exception as e:
             print(f'DEBUG:CallPansasException:Exception:{e}')

@@ -1,20 +1,20 @@
 @startuml
 entity Transaction {
-  + Transaction Code
-  + User ID
-  + Transaction Amount
-  + Created Date
-  + Transaction Type
+   + Transaction Code
+   User ID
+   Transaction Amount
+   Created Date
+   Transaction Type
 }
 
 entity User {
-  + User ID
-  + Full Name
+   + User ID
+   User
 }
 
 entity Company {
-  + User ID
-  + Working Company Name
+   + User ID
+   Working Company Name
 }
 
 Transaction ||--o{ User

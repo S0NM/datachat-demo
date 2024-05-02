@@ -2,7 +2,7 @@ gspread==6.1.0
 matplotlib==3.8.4
 openai==1.17.0
 pandas==1.5.3
-pandasai==2.0.32
+pandasai==2.0.36
 pillow==10.3.0
 plantuml==0.3.0
 seaborn==0.13.2
