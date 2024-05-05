@@ -23,7 +23,7 @@ env_google_key = "GS_ACCOUNT_JSON"
 if env_openai_key not in os.environ:
     os.environ["OPENAI_API_KEY"] = st.secrets['OPENAI_API_KEY']
 pandas_client = OpenAI()
-pandas_client.model="gpt-4-turbo"
+pandas_client.model="gpt-4"
 openai_client = OpenAIClient()
 if env_google_key not in os.environ:
     GS_ACCOUNT_JSON = st.secrets[env_google_key]
